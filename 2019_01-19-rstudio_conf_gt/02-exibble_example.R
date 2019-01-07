@@ -1,9 +1,10 @@
 library(gt)
 library(tidyverse)
 
+# Have a look at `exibble`
 exibble
 
-# Create a gt table from `exibble`
+# View an `exibble` gt table
 exibble %>% gt()
 
 # Create a stub (with row labels), and,
@@ -15,7 +16,6 @@ tab <-
     rowname_col = "row",
     groupname_col = "group"
   )
-
 tab
 
 # Format the `num` column with gt's
@@ -25,7 +25,6 @@ tab_2 <-
   fmt_scientific(
     columns = vars(num),
     decimals = 3)
-
 tab_2
 
 # View a table of date styles
@@ -41,7 +40,6 @@ tab_3 <-
     rows = grepl("^[a-d]", char),
     date_style = 6
   )
-
 tab_3
 
 # Remove some columns from the table
@@ -49,7 +47,6 @@ tab_4 <-
   tab_3 %>%
   cols_hide(
     columns = vars(char, fctr, time, datetime))
-
 tab_4
 
 # Format the currency column to have
@@ -60,7 +57,6 @@ tab_5 <-
     columns = vars(currency),
     currency = "GBP"
     )
-
 tab_5
 
 # Add conditional footnotes to some of
@@ -74,7 +70,6 @@ tab_6 <-
       rows = currency < 20
     )
   )
-
 tab_6
 
 # Add a footnote to the `currency`
@@ -87,7 +82,6 @@ tab_7 <-
       columns = vars(currency)
     )
   )
-
 tab_7
 
 # Add a header to the table (with a
@@ -98,15 +92,10 @@ tab_8 <-
     title = "An Exibble Example",
     subtitle = md("Uses the `exibble` dataset from **gt**")
   )
-
 tab_8
 
 # Color the stub cells in blue
 tab_9 <-
   tab_8 %>%
   tab_options(column_labels.background.color = "blue")
-
 tab_9
-
-
-
