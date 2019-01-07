@@ -11,6 +11,11 @@ initial_months <-
     "J", "A", "S", "O", "N", "D",
     " ")
 
+# Create `sizes_order` and `types_order` to
+# support the ordering of pizza sizes and types
+sizes_order <- c("S", "M", "L", "XL", "XXL")
+types_order <- c("Classic", "Chicken", "Supreme", "Veggie")
+
 # Get the total pizzaplace sales in the
 # 2015 year; format as a currency value
 total_sales_2015 <-
@@ -27,18 +32,28 @@ pizza_plot <-
   mutate(type = str_to_title(type)) %>%
   mutate(date = as.Date(date)) %>%
   group_by(date, type) %>%
-  summarize(Pizzas = n(), Income = sum(price)) %>%
+  summarize(
+    Pizzas = n(),
+    Income = sum(price)
+  ) %>%
   ungroup() %>%
   ggplot() +
-  geom_point(aes(x = date, y = Income), color = "steelblue") +
+  geom_point(
+    aes(x = date, y = Income),
+    color = "steelblue"
+  ) +
   facet_wrap(~type) +
-  scale_x_date(date_breaks = "1 month", date_labels = initial_months) +
+  scale_x_date(
+    date_breaks = "1 month",
+    date_labels = initial_months
+  ) +
   scale_y_continuous(labels = scales::comma) +
   labs(
     title = "pizzaplace: Daily Pizza Sales in 2015",
     subtitle = "Faceted by the type of pizza",
     x = NULL,
-    y = "Number of Pizzas Sold") +
+    y = "Number of Pizzas Sold"
+  ) +
   theme_minimal() +
   theme(
     axis.text = element_text(color = "grey25"),
@@ -54,18 +69,14 @@ pizza_plot <-
     plot.subtitle = element_text(color = "grey25"),
     plot.margin = unit(c(20, 20, 20, 20), "points"),
     legend.box.spacing = unit(2, "points"),
-    legend.position = "bottom")
+    legend.position = "bottom"
+  )
 
 # Make the plot suitable for mailing by
 # converting it to an HTML fragment
 pizza_plot_email <-
   pizza_plot %>%
   blastula::add_ggplot()
-
-# Create `sizes_order` and `types_order` to
-# support the ordering of pizza sizes and types
-sizes_order <- c("S", "M", "L", "XL", "XXL")
-types_order <- c("Classic", "Chicken", "Supreme", "Veggie")
 
 # Create a gt table that uses the `pizzaplace`
 # dataset; ensure that `as_raw_html()` is used
@@ -162,7 +173,7 @@ email <-
 
   I also put all the 2015 numbers into an R \\
   dataset called `pizzaplace`. Not sure why \\
-  I did that, but I did. It's in the `gt` \\
+  I did that, but I did. It's in the **gt** \\
   package.
 
   Talk to you later,
@@ -174,20 +185,27 @@ email <-
 # Preview the email in the RStudio Viewer
 email %>% blastula::preview_email()
 
+
+
+
+
+
+#
+#
 # Create a credentials file for sending
 # this message through Gmail
-blastula::create_email_creds_file(
-  user = "********@gmail.com",
-  password = "**************",
-  provider = "gmail",
-  sender = "Sender Name",
-  creds_file_name = "gmail_creds")
-
+# blastula::create_email_creds_file(
+#   user = "********@gmail.com",
+#   password = "**************",
+#   provider = "gmail",
+#   sender = "Sender Name",
+#   creds_file_name = "gmail_creds")
+#
 # Send the email message out with
 # `send_email_out()`
-send_email_out(
-  message = email,
-  from = "******@gmail.com",
-  to = "********@gmail.me",
-  subject = "A look back at the pizzaplace 2015 sales",
-  creds_file = "gmail_creds")
+# send_email_out(
+#   message = email,
+#   from = "******@gmail.com",
+#   to = "********@gmail.me",
+#   subject = "A look back at the pizzaplace 2015 sales",
+#   creds_file = "gmail_creds")
