@@ -9,12 +9,13 @@ library(gt)
 library(tidyverse)
 ```
 
+Have a look at `exibble`.
 
 ```{r}
 exibble
 ```
 
-Create a gt table from `exibble`.
+View an `exibble` **gt** table
 
 ```{r}
 exibble %>% gt()
@@ -95,7 +96,7 @@ Add conditional footnotes to some of the `currency` values.
 tab_6 <-
   tab_5 %>%
   tab_footnote(
-    footnote = "These are lower prices",
+    footnote = "These are lower prices.",
     locations = cells_data(
       columns = vars(currency),
       rows = currency < 20
@@ -133,13 +134,22 @@ tab_8 <-
 tab_8
 ```
 
-Color the stub cells in blue.
+Have the footnote glyphs be a sequence of lowercase letters.
 
 ```{r}
 tab_9 <-
   tab_8 %>%
-  tab_options(column_labels.background.color = "blue")
+  tab_options(footnote.glyph = letters)
 
 tab_9
 ```
 
+Color the stub cells in blue.
+
+```{r}
+tab_10 <-
+  tab_9 %>%
+  tab_options(column_labels.background.color = "blue")
+
+tab_10
+```

@@ -56,7 +56,7 @@ tab_5 <-
   fmt_currency(
     columns = vars(currency),
     currency = "GBP"
-    )
+  )
 tab_5
 
 # Add conditional footnotes to some of
@@ -64,7 +64,7 @@ tab_5
 tab_6 <-
   tab_5 %>%
   tab_footnote(
-    footnote = "These are lower prices",
+    footnote = "These are lower prices.",
     locations = cells_data(
       columns = vars(currency),
       rows = currency < 20
@@ -94,8 +94,17 @@ tab_8 <-
   )
 tab_8
 
-# Color the stub cells in blue
+# Have the footnote glyphs be a
+# sequence of lowercase letters
 tab_9 <-
   tab_8 %>%
-  tab_options(column_labels.background.color = "blue")
+  tab_options(footnote.glyph = letters)
 tab_9
+
+# Color the stub cells in blue
+tab_10 <-
+  tab_9 %>%
+  tab_options(column_labels.background.color = "blue")
+tab_10
+
+
