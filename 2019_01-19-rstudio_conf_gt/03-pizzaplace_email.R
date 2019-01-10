@@ -3,14 +3,6 @@ library(tidyverse)
 library(scales)
 library(blastula)
 
-# Create short labels for months (displays
-# better for small plots in email messages)
-initial_months <-
-  c("D",
-    "J", "F", "M", "A", "M", "J",
-    "J", "A", "S", "O", "N", "D",
-    " ")
-
 # Create `sizes_order` and `types_order` to
 # support the ordering of pizza sizes and types
 sizes_order <- c("S", "M", "L", "XL", "XXL")
@@ -25,58 +17,6 @@ total_sales_2015 <-
     big.mark = ",",
     prefix = "$"
   )(.)
-
-# Create a plot using the `pizzaplace` dataset
-pizza_plot <-
-  pizzaplace %>%
-  mutate(type = str_to_title(type)) %>%
-  mutate(date = as.Date(date)) %>%
-  group_by(date, type) %>%
-  summarize(
-    Pizzas = n(),
-    Income = sum(price)
-  ) %>%
-  ungroup() %>%
-  ggplot() +
-  geom_point(
-    aes(x = date, y = Income),
-    color = "steelblue"
-  ) +
-  facet_wrap(~type) +
-  scale_x_date(
-    date_breaks = "1 month",
-    date_labels = initial_months
-  ) +
-  scale_y_continuous(labels = scales::comma) +
-  labs(
-    title = "pizzaplace: Daily Pizza Sales in 2015",
-    subtitle = "Faceted by the type of pizza",
-    x = NULL,
-    y = "Number of Pizzas Sold"
-  ) +
-  theme_minimal() +
-  theme(
-    axis.text = element_text(color = "grey25"),
-    axis.text.x = element_text(size = 6),
-    axis.text.y = element_text(size = 8),
-    strip.text.x = element_text(size = 9),
-    axis.title = element_text(color = "grey25"),
-    legend.title = element_text(color = "grey25"),
-    legend.text = element_text(color = "grey25"),
-    panel.grid.major = element_line(color = "grey75"),
-    plot.title = element_text(color = "grey25"),
-    plot.caption = element_text(color = "grey25"),
-    plot.subtitle = element_text(color = "grey25"),
-    plot.margin = unit(c(20, 20, 20, 20), "points"),
-    legend.box.spacing = unit(2, "points"),
-    legend.position = "bottom"
-  )
-
-# Make the plot suitable for mailing by
-# converting it to an HTML fragment
-pizza_plot_email <-
-  pizza_plot %>%
-  blastula::add_ggplot()
 
 # Create a gt table that uses the `pizzaplace`
 # dataset; ensure that `as_raw_html()` is used
@@ -120,11 +60,11 @@ pizza_tab_email <-
   tab_options(
     summary_row.background.color = "#FFFEEE",
     stub_group.background.color = "#E6EFFC",
-    table.font.size = "small",
-    heading.title.font.size = "small",
-    heading.subtitle.font.size = "x-small",
-    stub_group.font.size = "small",
-    column_labels.font.size = "small",
+    table.font.size = px(14),
+    # heading.title.font.size = "small",
+    # heading.subtitle.font.size = "x-small",
+    # stub_group.font.size = "small",
+    # column_labels.font.size = "small",
     row.padding = "5px"
     ) %>%
   cols_label(
@@ -159,12 +99,6 @@ email <-
   I look back at the numbers, it's **{total_sales_2015}** \\
   in sales. Not too bad. All things considered.
 
-  Here's a plot of the daily pizza sales. I \\
-  faceted by the type of pizza because I know \\
-  that's your preference:
-
-  {pizza_plot_email}
-
   Here is a table that shows a breakdown \\
   of the 2015 results by pizza size, split into \\
   *Pizza Type* groups:
@@ -190,22 +124,28 @@ email %>% blastula::preview_email()
 
 
 
-#
-#
+
+
+
+
+
+
 # Create a credentials file for sending
 # this message through Gmail
-# blastula::create_email_creds_file(
-#   user = "********@gmail.com",
-#   password = "**************",
-#   provider = "gmail",
-#   sender = "Sender Name",
-#   creds_file_name = "gmail_creds")
-#
+blastula::create_email_creds_file(
+  user = "******@gmail.com",
+  password = "**********",
+  provider = "gmail",
+  sender = "Sender Name",
+  creds_file_name = "gmail_creds"
+)
+
 # Send the email message out with
 # `send_email_out()`
-# send_email_out(
-#   message = email,
-#   from = "******@gmail.com",
-#   to = "********@gmail.me",
-#   subject = "A look back at the pizzaplace 2015 sales",
-#   creds_file = "gmail_creds")
+send_email_out(
+  message = email,
+  from = "******@gmail.com",
+  to = "******@email.net",
+  subject = "A look back at pizzaplace's 2015 sales",
+  creds_file = "gmail_creds"
+)
