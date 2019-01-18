@@ -11,9 +11,10 @@ types_order <- c("Classic", "Chicken", "Supreme", "Veggie")
 # Get the total pizzaplace sales in the
 # 2015 year; format as a currency value
 total_sales_2015 <-
-  pizzaplace$price %>%
+  pizzaplace %>% 
+  dplyr::pull(price) %>%
   sum() %>%
-  comma_format(
+  scales::comma_format(
     big.mark = ",",
     prefix = "$"
   )(.)
@@ -24,15 +25,15 @@ total_sales_2015 <-
 # CSS styles)
 pizza_tab_email <-
   pizzaplace %>%
-  mutate(type = str_to_title(type)) %>%
-  mutate(size = factor(size, levels = sizes_order)) %>%
-  mutate(type = factor(type, levels = types_order)) %>%
-  group_by(type, size) %>%
-  summarize(
+  dplyr::mutate(type = stringr::str_to_title(type)) %>%
+  dplyr::mutate(size = factor(size, levels = sizes_order)) %>%
+  dplyr::mutate(type = factor(type, levels = types_order)) %>%
+  dplyr::group_by(type, size) %>%
+  dplyr::summarize(
     pies = n(),
     income = sum(price)
     ) %>%
-  arrange(type, size) %>%
+  dplyr::arrange(type, size) %>%
   gt(rowname_col = "size") %>%
   fmt_currency(
     columns = vars(income),
@@ -61,10 +62,6 @@ pizza_tab_email <-
     summary_row.background.color = "#FFFEEE",
     stub_group.background.color = "#E6EFFC",
     table.font.size = px(14),
-    # heading.title.font.size = "small",
-    # heading.subtitle.font.size = "x-small",
-    # stub_group.font.size = "small",
-    # column_labels.font.size = "small",
     row.padding = "5px"
     ) %>%
   cols_label(
