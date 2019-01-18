@@ -21,7 +21,7 @@ total_sales_2015 <-
 
 # Create a gt table that uses the `pizzaplace`
 # dataset; ensure that `as_raw_html()` is used
-# (that gets us an HTML fragement with inlined
+# (that gets us an HTML fragment with inlined
 # CSS styles)
 pizza_tab_email <-
   pizzaplace %>%
