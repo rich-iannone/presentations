@@ -27,9 +27,6 @@ tab_2 <-
     decimals = 3)
 tab_2
 
-# View a table of date styles
-info_date_style()
-
 # Format the dates in `date` (but
 # only those rows that satisfy a
 # condition) with `date_style` 6
@@ -42,7 +39,15 @@ tab_3 <-
   )
 tab_3
 
-# Remove some columns from the table
+# How do I get info on `date_style`s?
+info_date_style()
+
+# Are there other info tables? Yep:
+info_currencies()
+info_time_style()
+info_paletteer()
+
+# Anyway, let's get rid of some columns
 tab_4 <-
   tab_3 %>%
   cols_hide(
@@ -96,15 +101,15 @@ tab_8
 
 # Have the footnote glyphs be a
 # sequence of lowercase letters
+# (`tab_options()` has options galore)
 tab_9 <-
   tab_8 %>%
   tab_options(footnote.glyph = letters)
 tab_9
 
-# Color the stub cells in blue
+# Color the stub cells in blue; we just
+# need to target `column_labels.background.color`
 tab_10 <-
   tab_9 %>%
   tab_options(column_labels.background.color = "blue")
 tab_10
-
-
