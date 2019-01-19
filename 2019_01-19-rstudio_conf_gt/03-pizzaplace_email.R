@@ -10,6 +10,7 @@ types_order <- c("Classic", "Chicken", "Supreme", "Veggie")
 
 # Get the total pizzaplace sales in the
 # 2015 year; format as a currency value
+# (this will go into the email body)
 total_sales_2015 <-
   pizzaplace %>% 
   dplyr::pull(price) %>%
@@ -115,17 +116,6 @@ email <-
 
 # Preview the email in the RStudio Viewer
 email %>% blastula::preview_email()
-
-
-
-
-
-
-
-
-
-
-
 
 # Create a credentials file for sending
 # this message through Gmail
