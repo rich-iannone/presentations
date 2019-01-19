@@ -1,33 +1,22 @@
 library(gt)
 library(tidyverse)
 
+# This is code that makes the first gt table
+# shown in the presentation (the one on the
+# `What are some useful features in display
+# tables?` slide)
+
 # Define our preferred order `ctry_origin`
-order_countries <- c("Germany", "Italy", "United States", "Japan")
+order_countries <- 
+  c("Germany", "Italy", "United States", "Japan")
 
-# Use dplyr functions to get the car with the best city gas mileage;
-# this will be used to target the correct cell for a footnote
-best_gas_mileage_city <-
-  gtcars %>%
-  dplyr::arrange(desc(mpg_c)) %>%
-  dplyr::slice(1) %>%
-  dplyr::mutate(car = paste(mfr, model)) %>%
-  dplyr::pull(car)
-
-# Use dplyr functions to get the car with the highest horsepower
-# this will be used to target the correct cell for a footnote
-highest_horsepower <-
-  gtcars %>%
-  dplyr::arrange(desc(hp)) %>%
-  dplyr::slice(1) %>%
-  dplyr::mutate(car = paste(mfr, model)) %>%
-  dplyr::pull(car)
-
-# Create a display table with `gtcars`, using all of the previous
-# statements piped together + additional `tab_footnote()` stmts
+# Create a display table with `gtcars`, using
+# all of the previous statements piped together
+# + additional `tab_footnote()` statements
 tab <-
   gtcars %>%
   dplyr::group_by(ctry_origin) %>%
-  dplyr::top_n(2) %>%
+  dplyr::top_n(n = 2) %>%
   dplyr::ungroup() %>%
   dplyr::filter(ctry_origin != "United Kingdom") %>%
   dplyr::arrange(
@@ -82,14 +71,28 @@ tab <-
   ) %>%
   tab_style(
     style = cells_styles(text_size = px(12)),
-    locations = cells_data(columns = vars(trim, trsmn, mpg_c, hp, trq))
+    locations = cells_data(
+      columns = vars(trim, trsmn, mpg_c, hp, trq)
+    )
   ) %>%
   text_transform(
     locations = cells_data(columns = vars(trsmn)),
     fn = function(x) {
 
+      # We are decoding the transmission string
+      # `<single number><transmission type>`
+      
+      # `x` is a character vector of formatted
+      # cell values (from top to bottom)
+      
+      # Get the speed, always the first
+      # character from `x`
       speed <- substr(x, 1, 1)
 
+      # The second to third characters in `x` is
+      # transmission type code; we are just doing
+      # `dplyr::case_when()`` here because there
+      # are only 4 possible cases
       type <-
         dplyr::case_when(
           substr(x, 2, 3) == "am" ~ "Automatic/Manual",
@@ -98,6 +101,9 @@ tab <-
           substr(x, 2, 3) == "dd" ~ "Direct Drive"
         )
 
+      # Paste the parts together to get the same-
+      # sized character vector and we now have
+      # transformed cell values
       paste(speed, " Speed<br><em>", type, "</em>")
     }
   ) %>%
