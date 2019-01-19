@@ -1,4 +1,5 @@
 library(gt)
+library(emo)
 library(tidyverse)
 library(scales)
 library(blastula)
