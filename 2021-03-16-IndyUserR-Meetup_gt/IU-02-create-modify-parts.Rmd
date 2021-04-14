@@ -147,7 +147,7 @@ Use `exibble` to create a **gt** table. Add a source note to the table footer th
 exibble %>%
   gt() %>%
   tab_source_note(
-    source_note = "The `exibble` dataset is available in the **gt** package."
+    source_note = md("The `exibble` dataset is available in the **gt** package.")
   )
 ```
 
