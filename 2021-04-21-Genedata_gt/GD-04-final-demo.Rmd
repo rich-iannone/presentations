@@ -26,12 +26,6 @@ svg_globe <- omsvg::SVG_la("globe")
 svg_clock <- omsvg::SVG_la("clock")
 ```
 
-# You can install `omsvg` from **GitHub** with:
-
-```{r eval=FALSE}
-# remotes::install_github("rich-iannone/omsvg")
-```
-
 Let's get a color palette from the {paletteer} package. The one we want is {ggsci}'s `orange_material`.
 
 ```{r}
