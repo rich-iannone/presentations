@@ -107,21 +107,8 @@ countrypops %>%
   fmt_number(
     columns = 2:9, # <- selecting columns 2 to 9 in *passed in dataset*
     decimals = 2,
-    suffixing = TRUE
-  )
-```
-
-------
-
-With `exibble` make a simple **gt** table. Format the `num` column as numeric with three decimal places and do this formatting according to the `"fr"` locale.
-
-```{r}
-exibble %>%
-  dplyr::select(num) %>%
-  gt() %>%
-  fmt_number(
-    columns = num,
-    locale = "fr" # <- try: "fr_FR", "de", "de_AT" (i.e., <lang>_<region>)
+    suffixing = TRUE,
+    locale = "es" # <- try: "fr_FR", "de", "de_AT" (i.e., <lang>_<region>)
   )
 ```
 
@@ -259,11 +246,11 @@ exibble %>%
   gt() %>%
   fmt_missing(
     columns = 1:2,
-    missing_text = "missing"
+    missing_text = md("**missing**")
   ) %>%
   fmt_missing(
     columns = 4:7,
-    missing_text = "nothing"
+    missing_text = md("_**UDL**_")
   )
 ```
 
@@ -299,35 +286,10 @@ countrypops %>%
   data_color(
     columns = population,
     colors = scales::col_numeric(
-      palette = c(
-        "red", "orange", "green", "blue"),
-      domain = c(0.2E7, 0.4E7)
+      palette = c("red", "orange", "green", "blue"),
+      domain = c(2E6, 4E6)
     )
   )
 ```
 
 ------
-
-Use `pizzaplace` to create a **gt** table. Apply colors from the `red_material` palette (in the `ggsci` pkg but more easily gotten from the `paletteer` package, info at `info_paletteer()`) to the `sold` and `income` columns. Set the `domain` of `scales::col_numeric()` to `NULL` to use the bounds of the available data as the domain.
-
-```{r}
-pizzaplace %>%
-  dplyr::filter(type %in% c("chicken", "supreme")) %>%
-  dplyr::group_by(type, size) %>%
-  dplyr::summarize(
-    sold = dplyr::n(),
-    income = sum(price),
-    .groups = "drop_last"
-  ) %>%
-  gt(rowname_col = "size") %>%
-  data_color(
-    columns = c(sold, income),
-    colors = scales::col_numeric(
-      palette = paletteer::paletteer_d(palette = "ggsci::red_material") %>% as.character(),
-      domain = NULL
-    )
-  )
-```
-
-------
-
