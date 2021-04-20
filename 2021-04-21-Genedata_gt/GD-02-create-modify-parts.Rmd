@@ -72,33 +72,6 @@ gtcars_small %>%
 
 ------
 
-With a few tidyselect statements in `c()`, we can get the same columns.
-
-```{r}
-gtcars_small %>%
-  gt(rowname_col = "model") %>%
-  tab_spanner(
-    label = "performance",
-    columns = c(starts_with("hp"), starts_with("trq"), starts_with("mpg"))
-  )
-```
-
-------
-
-If we relocate the `"hp"` column to the beginning (i.e., far left), the associated columns are gathered together (because `gather = TRUE`).
-
-```{r}
-gtcars_small %>%
-  dplyr::select(hp, everything()) %>%
-  gt(rowname_col = "model") %>%
-    tab_spanner(
-    label = "performance",
-    columns = c(hp, hp_rpm, trq, trq_rpm, mpg_c, mpg_h)
-  )
-```
-
-------
-
 ### `tab_header()`: Add a table header
 
 ``` r
@@ -216,20 +189,6 @@ For `locations` we use the `cells_*()` functions, just like in the `tab_footnote
 
 ##### EXAMPLES
 
-Change the font of all body cells in the `exibble` table to `Times New Roman`.
-
-```{r}
-exibble %>%
-  dplyr::select(num, currency) %>%
-  gt() %>%
-  tab_style(
-    style = cell_text(font = "Times New Roman"),
-    locations = cells_body()
-  )
-```
-
-------
-
 Use a font from the Google Fonts service by using the `google_font()` function. Recommendations on some Google fonts can be found by using `info_google_fonts()`.
 
 ```{r}
@@ -257,16 +216,14 @@ sp500 %>%
   gt() %>%
   tab_style(
     style = cell_fill(color = "lightgreen"),
-    locations = cells_body(
-      rows = close > open)
+    locations = cells_body(rows = close > open)
   ) %>%
   tab_style(
     style = list(
       cell_fill(color = "tomato"),
       cell_text(color = "white")
       ),
-    locations = cells_body(
-      rows = open > close)
+    locations = cells_body(rows = open > close)
   )
 ```
 
@@ -301,17 +258,17 @@ tab_1 <-
     title = md("Data listing from **exibble**"),
     subtitle = md("`exibble` is an R dataset")
   ) %>%
-  fmt_number(columns = num) %>%
-  fmt_currency(columns = currency) %>%
+  fmt_number(columns = num, locale = "de") %>%
+  fmt_currency(columns = currency, currency = "EUR", locale = "de") %>%
   tab_footnote(
-    footnote = "Using commas for separators.",
+    footnote = md("Numbers in `grp_b`."),
     locations = cells_body(
       columns = num,
       rows = num > 1000
     )
   ) %>%
   tab_footnote(
-    footnote = "Using commas for separators.",
+    footnote = "Very high amounts.",
     locations = cells_body(
       columns = currency,
       rows = currency > 1000)
@@ -376,7 +333,7 @@ Reduce the size of the title and the subtitle text (with `heading.title.font.siz
 tab_1 %>%
   tab_options(
     heading.title.font.size = "small",
-    heading.subtitle.font.size = "small"
+    heading.subtitle.font.size = "x-small"
   )
 ```
 
