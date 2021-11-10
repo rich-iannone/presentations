@@ -113,7 +113,7 @@ countrypops %>%
 
 ------
 
-With `exibble` make a simple **gt** table. Format the `num` column as numeric with three decimal places and do this formatting according to the `"fr"` locale.
+With `exibble` make a simple **gt** table. Format the `num` column as numeric with three decimal places and do this formatting according to the `"de"` locale.
 
 ```{r}
 exibble %>%
@@ -121,7 +121,7 @@ exibble %>%
   gt() %>%
   fmt_number(
     columns = num,
-    locale = "fr" # <- try: "fr_FR", "de", "de_AT" (i.e., <lang>_<region>)
+    locale = "de" # <- try: "fr", "fr_CA", "de_AT" (i.e., <lang>_<region>)
   )
 ```
 
