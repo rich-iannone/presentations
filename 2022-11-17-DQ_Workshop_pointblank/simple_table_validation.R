@@ -100,3 +100,88 @@ informant_pp <-
   )
 
 informant_pp
+
+# Back to validation, we can perform validations
+# over a period of time and get a unified report
+
+al <- 
+  action_levels(
+    warn_at = 0.05,
+    stop_at = 0.10,
+    notify_at = 0.20
+  )
+
+agent_1 <-
+  create_agent(
+    tbl = small_table,
+    label = "An example.",
+    actions = al
+  ) %>%
+  col_vals_gt(
+    columns = vars(date_time),
+    value = vars(date),
+    na_pass = TRUE
+  ) %>%
+  col_vals_gt(
+    columns = vars(b), 
+    value = vars(g),
+    na_pass = TRUE
+  ) %>%
+  rows_distinct() %>%
+  col_vals_equal(
+    columns = vars(d), 
+    value = vars(d),
+    na_pass = TRUE
+  ) %>%
+  col_vals_between(
+    columns = vars(c), 
+    left = vars(a), right = vars(d)
+  ) %>%
+  col_vals_not_between(
+    columns = vars(c),
+    left = 10, right = 20,
+    na_pass = TRUE
+  ) %>%
+  rows_distinct(columns = vars(d, e, f)) %>%
+  col_is_integer(columns = vars(a)) %>%
+  interrogate()
+
+agent_2 <- 
+  agent_1 %>%
+  col_exists(columns = vars(date, date_time)) %>%
+  col_vals_regex(
+    columns = vars(b), 
+    regex = "[0-9]-[a-z]{3}-[0-9]{3}",
+    active = FALSE
+  ) %>%
+  interrogate()
+
+agent_3 <- 
+  agent_2 %>%
+  col_vals_in_set(
+    columns = vars(f),
+    set = c("low", "mid", "high")
+  ) %>%
+  remove_steps(i = 5) %>%
+  deactivate_steps(i = 1) %>%
+  interrogate()
+
+agent_4 <-
+  agent_3 %>%
+  activate_steps(i = 1) %>%
+  activate_steps(i = 10) %>%
+  remove_steps(i = 6) %>%
+  interrogate()
+
+multiagent <-
+  create_multiagent(
+    agent_1, agent_2, agent_3, agent_4
+  )
+
+report_wide <- 
+  get_multiagent_report(
+    multiagent,
+    display_mode = "wide"
+  )
+
+report_wide
