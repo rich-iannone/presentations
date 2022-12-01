@@ -1,0 +1,108 @@
+---
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(gt)
+library(readr)
+```
+
+## Data preparation work before generating the summary table
+
+Import the data table.
+
+```{r}
+tbl <- read_rds(file = "data-14_3_13.rds")
+```
+
+Take a look at the structure of the table.
+
+```{r}
+tbl
+```
+
+Get the current date with the `Sys.Date()` function.
+
+```{r}
+reporting_date <- as.character(Sys.Date())
+```
+
+Get all rows with the *N* values.
+
+```{r}
+n_value_rows <- tbl %>% filter(label == "n")
+```
+
+Pull the highest *N* value for each of the required columns.
+
+```{r}
+placebo_n <- n_value_rows %>% pull(placebo) %>% max()
+xanomeline_ld_n <- n_value_rows %>% pull(xanomeline_ld) %>% max()
+xanomeline_hd_n <- n_value_rows %>% pull(xanomeline_hd) %>% max()
+```
+
+## Summary table generation with **gt**
+
+This table is built up using many of the same functions we used in `gt-01-14_2_01.Rmd`.
+
+```{r}
+gt_table_final <-
+  tbl %>%
+  gt() %>%
+  tab_header(
+    title = "Table 14.3.13",
+    subtitle = "CIBIC+ - Categorical Analysis - LOCF",
+    preheader = c("Protocol: CDISCPILOT01", "Population: Efficacy")
+  ) %>%
+  sub_missing(columns = everything(), missing_text = "") %>%
+  fmt_number(columns = p, decimals = 4) %>%
+  fmt_percent(
+    columns = ends_with("_pct"),
+    decimals = 0,
+    scale_values = FALSE
+  ) %>%
+  cols_merge_n_pct(col_n = placebo, col_pct = placebo_pct) %>%
+  cols_merge_n_pct(col_n = xanomeline_ld, col_pct = xanomeline_ld_pct) %>%
+  cols_merge_n_pct(col_n = xanomeline_hd, col_pct = xanomeline_hd_pct) %>%
+  cols_label(
+    category = "",
+    label = "Assessment",
+    placebo  = md(paste0("Placebo  \n(N=", placebo_n, ")")),
+    xanomeline_ld = md(paste0("Xanomeline  \nLow Dose  \n(N=", xanomeline_ld_n, ")")),
+    xanomeline_hd = md(paste0("Xanomeline  \nHigh Dose  \n(N=", xanomeline_hd_n, ")")),
+    p = "p-value"
+  ) %>%
+  tab_footnote(
+    footnote = "Overall comparison of treatments using CMH test (Pearson Chi-Square), controlling for site group.",
+    locations = cells_column_labels(columns = p)
+  ) %>%
+  tab_source_note(
+    source_note = reporting_date
+  ) %>%
+  cols_width(
+    1 ~ pct(10),
+    2 ~ pct(25)
+  ) %>%
+  tab_options(
+    page.orientation = "landscape",
+    page.numbering = TRUE,
+    page.header.use_tbl_headings = TRUE,
+    page.footer.use_tbl_notes = TRUE
+  )
+
+gt_table_final
+```
+
+Writing the table to HTML can be done with `gtsave()`.
+
+```{r}
+gt_table_final %>% gtsave("html_14.3.13.html")
+```
+
+Write the **gt** table to an RTF document.
+
+```{r}
+gt_table_final %>% gtsave("tbl_14.3.13.rtf")
+```
