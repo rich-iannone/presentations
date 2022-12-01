@@ -1,0 +1,256 @@
+---
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(gt)
+library(readr)
+```
+
+## Data preparation work before generating the summary table
+
+Import the data table.
+
+```{r}
+tbl <- readr::read_rds(file = "data-14_2_01.rds")
+```
+
+Take a look at the structure of the table.
+
+```{r}
+tbl
+```
+
+Get the current date with the `Sys.Date()` function.
+
+```{r}
+reporting_date <- as.character(Sys.Date())
+```
+
+Get the row with the *N* values.
+
+```{r}
+n_values_row <- tbl %>% filter(category == "Age (y)")
+```
+
+Pull each of the *N* values for the required columns.
+
+```{r}
+placebo_n <- n_values_row %>% pull(placebo)
+xanomeline_ld_n <- n_values_row %>% pull(xanomeline_ld)
+xanomeline_hd_n <- n_values_row %>% pull(xanomeline_hd)
+total_n <- n_values_row %>% pull(total)
+```
+
+Add in a footnote from an external Excel file (here, called `titles.xlsx`).
+
+```{r}
+# Get the table that contains all text for different table types
+titles <- readxl::read_xlsx("titles.xlsx")
+
+# Extract the footnote text for the p-value column
+p_footnote <-
+  titles %>%
+  filter(table_number == "14-2.01" & type == "footnote" & index == 1) %>%
+  pull(text1)
+```
+
+## Summary table generation with **gt**
+
+
+Introduce the data frame to the `gt()` function and look at the table in the RStudio Viewer. It will be an HTML table but it will closely follow the structure and formatting of the final RTF table.
+
+```{r}
+gt_table <- gt(tbl)
+
+gt_table
+```
+
+We will continue to build the gt table with functions. Next, we will add a table header. This contains a title (`"Table 14.2.01"`) and a subtitle (`"Summary of Demographic and Baseline Characteristics"`). We will also provide two `preheader` lines that describe the protocol and the population. Note that these preheader lines won't appear in the HTML table preview but *will* appear in the final RTF document.
+
+```{r}
+gt_table <-
+  gt_table %>%
+  tab_header(
+    title = "Table 14.2.01",
+    subtitle = "Summary of Demographic and Baseline Characteristics",
+    preheader = c("Protocol: CDISCPILOT01", "Population: Intent-to-Treat")
+  )
+
+gt_table
+```
+
+Let's remove all of those cells that have `NA` in them. We can do this with the `sub_missing()` function. Ensure that all columns are targeted with `columns = everything()` and that the replacement text is an empty string (`""`).
+
+```{r}
+gt_table <-
+  gt_table %>%
+  sub_missing(columns = everything(), missing_text = "")
+
+gt_table
+```
+
+Let's do some formatting of cell values now. The `placebo`, `xanomeline_ld`, `xanomeline_hd`, and `total` columns have summary stats values that require decimal places for precision. All other values should be untouched (i.e., remain as integers). To do this, we're going to use `fmt_number()` on those columns but also use the `rows` argument to declare that only those cells of certain rows should get this type of formatting. The `label` column can be used to help with this, only those labels that refer to stats measures will have cells that need the formatting. In this case, we want three significant digits so we are going to use the `n_sigfig` argument with the value of `3`.
+
+```{r}
+gt_table <-
+  gt_table %>%
+  fmt_number(
+    columns = c(placebo, xanomeline_ld, xanomeline_hd, total),
+    rows = label %in% c("Mean", "SD", "Median", "Min", "Max"),
+    n_sigfig = 3
+  )
+
+gt_table
+```
+
+The `p` column to the far right requires 4 decimal places for every single value. We can use `fmt_number()` for this, supplying the column name to `columns` and using `decimals = 4`.
+
+```{r}
+gt_table <-
+  gt_table %>%
+  fmt_number(columns = p, decimals = 4)
+
+gt_table
+```
+
+Every column that ends in `_pct` is a percentage value but it needs a `%` sign. We can use `fmt_percent()` to add the percent sign easily to values in these columns. We don't have to name each of these columns, we can use the `ends_with()` helper function and supply the text fragment `"_pct"` to target all of the relevant columns. In this case, we don't want decimals for any of the values (use `decimals = 0`), and, very importantly, we have to tell this function that these values are already in the correct form and don't need to be scaled (with `scale_values = FALSE`).
+
+```{r}
+gt_table <-
+  gt_table %>%
+  fmt_percent(
+    columns = ends_with("_pct"),
+    decimals = 0,
+    scale_values = FALSE
+  )
+
+gt_table
+```
+
+There are groups of columns that contain N values and percentage values. But the convention is to use `N (x%)` in each cell. There is a function in gt that allows for columns to be merged and combined into a set format. For this case we need the `cols_merge_n_pct()` function to take these pairs of columns and merge them with the appropriate formatting.
+
+```{r}
+gt_table <-
+  gt_table %>%
+  cols_merge_n_pct(col_n = placebo, col_pct = placebo_pct) %>%
+  cols_merge_n_pct(col_n = xanomeline_ld, col_pct = xanomeline_ld_pct) %>%
+  cols_merge_n_pct(col_n = xanomeline_hd, col_pct = xanomeline_hd_pct) %>%
+  cols_merge_n_pct(col_n = total, col_pct = total_pct)
+
+gt_table
+```
+
+The column labels need labels that work better than the short ones commonly used for data analysis. With `cols_label()` we can replace the default labels (i.e., column names are used as the default labels). We wrap the label strings with `md()` to enable Markdown formatting. To add a line break, use the following bit of text `"  \n"`. Note that we are pasting in data from variables we declared earlier.
+
+```{r}
+gt_table <-
+  gt_table %>%
+  cols_label(
+    placebo  = md(paste0("Placebo  \n(N=", placebo_n, ")")),
+    xanomeline_ld = md(paste0("Xanomeline  \nLow Dose  \n(N=", xanomeline_ld_n, ")")),
+    xanomeline_hd = md(paste0("Xanomeline  \nHigh Dose  \n(N=", xanomeline_hd_n, ")")),
+    total = md(paste0("Total  \n(N=", total_n, ")")),
+    p = "p-value[1]"
+  )
+
+gt_table
+```
+
+Let's add in a footnote and a source note. This can be done with the `tab_footnote()` and `tab_source_note()` functions. In the final table, footnotes always appear before the source notes.
+
+```{r}
+gt_table <-
+  gt_table %>%
+  tab_footnote(footnote = p_footnote) %>%
+  tab_source_note(
+    source_note = paste('Program Source: 14-2.01.R     Executed: (Draft)', reporting_date)
+  )
+
+gt_table
+```
+
+We need a few finishing touches to ensure the table presents well in RTF. If the default widths are not ideal, we can adjust them with the `cols_width()` function. You can use column indices or column names on the left-hand side (of the `~`). We can use `pct()` (percentage) or `px()` (pixel) values on the right-hand side. This may require some trial-and-error to get right (i.e., look at the RTF, adjust widths, look again, etc.).
+
+For Pharma RTF applications, we probably want to set some very specific page-layout options. These are found in the `tab_options()` function and four options are used here: `page.orientation`, `page.numbering`, `page.header.use_tbl_headings`, and `page.footer.use_tbl_notes`. We want `"landscape"` for the first and `TRUE` for all the rest.
+
+```{r}
+gt_table <-
+  gt_table %>%
+  cols_width(
+    1 ~ pct(25),
+    2 ~ pct(20)
+  ) %>%
+  tab_options(
+    page.orientation = "landscape",
+    page.numbering = TRUE,
+    page.header.use_tbl_headings = TRUE,
+    page.footer.use_tbl_notes = TRUE
+  )
+```
+
+Putting it all together, you can write the table as one expression that uses `%>%` to link together the various directives.
+
+```{r}
+gt_table_final <-
+  tbl %>%
+  gt() %>%
+  tab_header(
+    title = "Table 14.2.01",
+    subtitle = "Summary of Demographic and Baseline Characteristics",
+    preheader = c("Protocol: CDISCPILOT01", "Population: Intent-to-Treat")
+  ) %>%
+  sub_missing(columns = everything(), missing_text = "") %>%
+  fmt_number(
+    columns = c(placebo, xanomeline_ld, xanomeline_hd, total),
+    rows = label %in% c("Mean", "SD", "Median", "Min", "Max"),
+    n_sigfig = 3
+  ) %>%
+  fmt_number(columns = p, decimals = 4) %>%
+  fmt_percent(
+    columns = ends_with("_pct"),
+    decimals = 0,
+    scale_values = FALSE
+  ) %>%
+  cols_merge_n_pct(col_n = placebo, col_pct = placebo_pct) %>%
+  cols_merge_n_pct(col_n = xanomeline_ld, col_pct = xanomeline_ld_pct) %>%
+  cols_merge_n_pct(col_n = xanomeline_hd, col_pct = xanomeline_hd_pct) %>%
+  cols_merge_n_pct(col_n = total, col_pct = total_pct) %>%
+  cols_label(
+    placebo  = md(paste0("Placebo  \n(N=", placebo_n, ")")),
+    xanomeline_ld = md(paste0("Xanomeline  \nLow Dose  \n(N=", xanomeline_ld_n, ")")),
+    xanomeline_hd = md(paste0("Xanomeline  \nHigh Dose  \n(N=", xanomeline_hd_n, ")")),
+    total = md(paste0("Total  \n(N=", total_n, ")")),
+    p = "p-value[1]"
+  ) %>%
+  tab_footnote(footnote = p_footnote) %>%
+  tab_source_note(
+    source_note = paste('Program Source: 14-2.01.R     Executed: (Draft)', reporting_date)
+  ) %>%
+  cols_width(
+    1 ~ pct(25),
+    2 ~ pct(20)
+  ) %>%
+  tab_options(
+    page.orientation = "landscape",
+    page.numbering = TRUE,
+    page.header.use_tbl_headings = TRUE,
+    page.footer.use_tbl_notes = TRUE
+  )
+
+gt_table_final
+```
+
+Writing the table to HTML can be done with `gtsave()`.
+
+```{r}
+gt_table_final %>% gtsave("html_14.2.01.html")
+```
+
+Write the **gt** table to an RTF document.
+
+```{r}
+gt_table_final %>% gtsave("tbl_14.2.01.rtf")
+```
