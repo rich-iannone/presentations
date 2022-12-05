@@ -19,7 +19,7 @@ tbl <- read_rds(file = "data-14_3_13.rds")
 
 Take a look at the structure of the table.
 
-```{r}
+```{r paged.print=FALSE}
 tbl
 ```
 
