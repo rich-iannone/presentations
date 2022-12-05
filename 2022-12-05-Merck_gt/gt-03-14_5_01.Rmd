@@ -19,23 +19,17 @@ tbl <- read_rds(file = "data-14_5_01.rds")
 
 Take a look at the structure of the table.
 
-```{r}
+```{r paged.print=FALSE}
 tbl
 ```
 
-Get the current date with the `Sys.Date()` function.
+Get the current date with the `Sys.Date()` function (will be used in table source note).
 
 ```{r}
 reporting_date <- as.character(Sys.Date())
 ```
 
-Get all rows with the *N* values.
-
-```{r}
-n_value_rows <- tbl %>% filter(label == "n")
-```
-
-Pull the highest *N* value for each of the required columns.
+Assign *N* values (will be used for column labels).
 
 ```{r}
 placebo_n <- 86L
