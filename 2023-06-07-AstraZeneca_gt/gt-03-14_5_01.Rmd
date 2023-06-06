@@ -1,0 +1,164 @@
+---
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(gt)
+library(readr)
+```
+
+## Data preparation work before generating the summary table
+
+Import the data table.
+
+```{r}
+tbl <- read_rds(file = "data-14_5_01.rds")
+```
+
+Take a look at the structure of the table.
+
+```{r paged.print=FALSE}
+tbl
+```
+
+Get the current date with the `Sys.Date()` function (will be used in table source note).
+
+```{r}
+reporting_date <- as.character(Sys.Date())
+```
+
+Assign *N* values (will be used for column labels).
+
+```{r}
+placebo_n <- 86L
+xanomeline_ld_n <- xanomeline_hd_n <- 84L
+```
+
+## Summary table generation with **gt**
+
+This table is built up using many of the same functions we used in `gt-01-14_2_01.Rmd`. There are some notable differences though:
+
+- the `fmt_integer()` function is being used to format numeric values as integers, and, we are wrapping each value in square brackets with `pattern = "[{x}]"`
+- there are two `fmt_numeric()` statements that format p-values and they use a `rows` expression (`fisher_placebo_v_xanomeline_ld < 0.2`) to target values less than `0.2` and the `pattern = "{x}*"` will apply the asterisk to the p-value in these cases
+- there is another set of `fmt_numeric()` statements that replace values close to `1` with `>0.99` by using a method similar to the above (`rows` expression, and a `pattern`)
+- the `tab_spanner()` function is used to create spanner column labels (these are labels over top column labels)
+
+```{r}
+tbl <-
+  tbl %>%
+  mutate(label = ifelse(!is.na(label), paste0("  ", label), label))
+
+gt_table_final <-
+  tbl %>%
+  gt() %>%
+  tab_header(
+    title = "Table 14-5.01",
+    subtitle = "Incidence of Treatment Emergent Adverse Events by Treatment Group",
+    preheader = c("Protocol: CDISCPILOT01", "Population: Safety")
+  ) %>%
+  sub_missing(columns = everything(), missing_text = "") %>%
+  fmt_number(
+    columns = c(fisher_placebo_v_xanomeline_ld, fisher_placebo_v_xanomeline_hd),
+    decimals = 4
+  ) %>%
+  fmt_percent(
+    columns = ends_with("_pct"),
+    decimals = 1,
+    scale_values = FALSE
+  ) %>%
+  fmt_integer(
+    columns = ends_with("_ae"),
+    pattern = "[{x}]"
+  ) %>%
+  fmt_number(
+    columns = starts_with("fisher"),
+    decimals = 3
+  ) %>%
+  fmt_number(
+    columns = fisher_placebo_v_xanomeline_ld,
+    rows = fisher_placebo_v_xanomeline_ld < 0.2,
+    decimals = 3,
+    pattern = "{x}*"
+  ) %>%
+  fmt_number(
+    columns = fisher_placebo_v_xanomeline_hd,
+    rows = fisher_placebo_v_xanomeline_hd < 0.2,
+    decimals = 3,
+    pattern = "{x}*"
+  ) %>%
+  fmt_number(
+    columns = fisher_placebo_v_xanomeline_ld,
+    rows = fisher_placebo_v_xanomeline_ld > 0.99,
+    pattern = ">.99"
+  ) %>%
+  fmt_number(
+    columns = fisher_placebo_v_xanomeline_hd,
+    rows = fisher_placebo_v_xanomeline_hd > 0.99,
+    pattern = ">.99"
+  ) %>%
+  cols_merge_n_pct(col_n = placebo_n, col_pct = placebo_pct) %>%
+  cols_merge_n_pct(col_n = xanomeline_ld_n, col_pct = xanomeline_ld_pct) %>%
+  cols_merge_n_pct(col_n = xanomeline_hd_n, col_pct = xanomeline_hd_pct) %>%
+  tab_spanner(
+    label = md(paste0("Placebo  \n(N=", placebo_n, ")")),
+    columns = starts_with("placebo")
+  ) %>%
+  tab_spanner(
+    label = md(paste0("Xanomeline  \nLow Dose  \n(N=", xanomeline_ld_n, ")")),
+    columns = starts_with("xanomeline_ld")
+  ) %>%
+  tab_spanner(
+    label = md(paste0("Xanomeline  \nHigh Dose  \n(N=", xanomeline_hd_n, ")")),
+    columns = starts_with("xanomeline_hd")
+  ) %>%
+  tab_spanner(
+    label = md("Fisher's Exact  \np-values"),
+    columns = starts_with("fisher")
+  ) %>%
+  cols_label(
+    placebo_n = "n(%)",
+    xanomeline_ld_n = "n(%)",
+    xanomeline_hd_n = "n(%)",
+    placebo_ae = "[AEs]",
+    xanomeline_ld_ae = "[AEs]",
+    xanomeline_hd_ae = "[AEs]",
+    fisher_placebo_v_xanomeline_ld = md("Placebo  \nvs.  \nLow Dose"),
+    fisher_placebo_v_xanomeline_hd = md("Placebo  \nvs.  \nHigh Dose")
+  ) %>%
+  tab_footnote(footnote = "Note: Treatment emergent events are defined as events which start on or after the start of treatment.") %>%
+  tab_footnote(footnote = "Note: Adverse events are coded using MedDRA.") %>%
+  tab_footnote(footnote = "Note: Percentages are based on the number of subjects in the safety population within each treatment group.") %>%
+  tab_footnote(footnote = "Note: P-values are based on Fisher's Exact test for the comparison of placebo versus each active treatment group. An asterisk is appended to p-values that are less than 0.15.") %>%
+  tab_footnote(footnote = "Note: The column [AE] represents the total number of times an event was recorded.") %>%
+  tab_source_note(
+    source_note = paste('Program Source: t-14-5-01.R     Executed: (Draft)', reporting_date)
+  ) %>%
+  cols_width(
+    1 ~ pct(30),
+    ends_with("n") ~ pct(34/3),
+    ends_with("ae") ~ pct(18/3),
+    starts_with("fisher") ~ pct(18/2)
+  ) %>%
+  tab_options(
+    page.orientation = "landscape",
+    page.numbering = TRUE,
+    page.header.use_tbl_headings = TRUE,
+    page.footer.use_tbl_notes = TRUE
+  )
+
+gt_table_final
+```
+
+Writing the table to HTML can be done with `gtsave()`.
+
+```{r}
+gt_table_final %>% gtsave("html_14.5.01.html")
+```
+
+Write the **gt** table to an RTF document.
+
+```{r}
+gt_table_final %>% gtsave("tbl_14.5.01.rtf")
+```
