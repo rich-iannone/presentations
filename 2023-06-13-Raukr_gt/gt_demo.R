@@ -1,9 +1,8 @@
 library(gt)
 library(tidyverse)
 library(glue)
-library(scales)
-library(paletteer)
 library(omsvg)
+library(paletteer)
 
 
 ## The Basics
