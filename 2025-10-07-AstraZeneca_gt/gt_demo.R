@@ -1,6 +1,5 @@
 library(gt)
 library(tidyverse)
-library(glue)
 
 
 
