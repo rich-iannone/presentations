@@ -1,15 +1,9 @@
 library(gt)
 library(tidyverse)
 
-
-
 ## The Basics
 
-
-# Let's print out the `exibble` dataset and see what it looks like
-exibble
-
-# Now lets introduce `exibble` to the `gt()` function.
+# Now lets introduce the `exibble` dataset to the `gt()` function.
 exibble |> gt()
 
 # We can modify the layout and create a stub; a stub is a
@@ -18,6 +12,7 @@ exibble |> gt(rowname_col = "row")
 
 # We can do some more structuring and create row groups
 exibble |> gt(rowname_col = "row", groupname_col = "group")
+
 
 ### Formatting Values
 
@@ -69,7 +64,6 @@ exibble |>
   )
 
 
-
 ### Column merging
 
 # Here we use the `cols_merge()` function to merge the
@@ -91,7 +85,6 @@ sp500 |>
     open = "open/close",
     low = "low/high"
   )
-
 
 
 ### Header and Footer
@@ -143,8 +136,6 @@ sza |>
   )
 
 
-
-
 ### Spanner Labels
 
 # Spanner labels can be used to group columns together
@@ -175,8 +166,7 @@ towny |>
   cols_width(everything() ~ px(120))
 
 
-
-
+### Measurement Units
 
 # We can format a column of text that has measurement units with `fmt_units()`
 illness |>
@@ -213,9 +203,6 @@ illness |>
   opt_vertical_padding(scale = 0.4) |>
   opt_align_table_header(align = "left") |>
   tab_options(heading.padding = px(10))
-
-
-
 
 
 ### Nanoplots
@@ -282,7 +269,7 @@ sza |>
   ) |>
   tab_source_note(
     source_note = "The solar altitude angle is the complement to
-    the solar zenith angle. TMYK."
+    the solar zenith angle."
   )
 
 # We can even make scatterplots with `cols_nanoplot()`
