@@ -1,0 +1,140 @@
+---
+format: html
+html-table-processing: none
+---
+
+Let's load the `nycflights` dataset as a Polars DataFrame.
+
+```{python}
+import pointblank as pb
+import polars as pl
+
+nycflights = pb.load_dataset(dataset="nycflights", tbl_type="polars")
+```
+
+
+
+
+It's good to at least look at the first few rows of the dataset.
+
+```{python}
+pb.preview(nycflights)
+```
+
+We could also look at summary information about the dataset.
+
+```{python}
+pb.col_summary_tbl(nycflights)
+```
+
+Missing values can be summarized as well.
+
+```{python}
+pb.missing_vals_tbl(nycflights)
+```
+
+
+
+
+
+
+Alright, let's create a validation plan for the `nycflights` dataset. The plan will include several assertions to check data quality.
+
+- col_vals_not_null for all columns ending with "time"
+- col_vals_not_null for the "carrier" column
+- col_vals_gt for the "distance" column to ensure all values are greater than 0
+- col_vals_in_set for the "origin" column to ensure values are in the set {"JFK", "LGA", "EWR"}
+- rows_distinct to ensure all rows are distinct
+
+```{python}
+validation = (
+    pb.Validate(
+        data=nycflights,
+        tbl_name="nycflights",
+        label="Validation of the nycflights dataset",
+        thresholds=pb.Thresholds(warning=1, error=1000, critical=0.10),
+    )
+    .col_vals_not_null(columns=pb.ends_with("time"))
+    .col_vals_not_null(columns="carrier")
+    .col_vals_lt(columns="arr_delay", value=1000, na_pass=True)
+    .col_vals_in_set(columns="origin", set=["JFK", "LGA", "EWR"])
+    .rows_distinct()
+    .interrogate()
+)
+
+validation # this will display the validation report
+```
+
+
+
+
+
+
+Any arrival delay above 1000 minute is concerning. Let's collect a DataFrame of the failing records for further inspection.
+
+Few things to note:
+
+- need to have the step index correct (7th step here)
+- need to set frame=True to get a DataFrame back
+- using Polars, so the DataFrame will be a Polars DataFrame
+- in the preview, we can see the `arr_delay` values that are 1000 or more
+- the row indices (in the first column) correspond to the original dataset
+
+```{python}
+arr_delay_failed = validation.get_data_extracts(i=7, frame=True)
+
+pb.preview(arr_delay_failed)
+```
+
+The above is great for grabbing the failing records of a specific validation step for further analysis. However, if you want a summary of that step's results, you can use the `get_step_report()` method.
+
+```{python}
+validation.get_step_report(i=7)
+```
+
+
+
+
+
+Now, let's look at how to use something called briefs in our validation plan. Briefs provide concise summaries of each validation step's outcome. They can be automatically generated or custom-defined. Let's see an example of auto-generated briefs.
+
+```{python}
+validation_2 = (
+    pb.Validate(
+        data=nycflights,
+        tbl_name="nycflights",
+        label="Validation of the nycflights dataset",
+        thresholds=pb.Thresholds(warning=1, error=1000, critical=0.10),
+        brief=True, # <-- auto-generate briefs
+    )
+    .col_vals_not_null(columns=pb.ends_with("time"))
+    .col_vals_not_null(columns="carrier")
+    .col_vals_lt(columns="arr_delay", value=1000, na_pass=True)
+    .col_vals_in_set(columns="origin", set=["JFK", "LGA", "EWR"])
+    .rows_distinct()
+    .interrogate()
+)
+
+validation_2
+```
+
+This is better for stakeholders who want a quick overview of the validation results without diving into too much detail.
+
+
+
+
+
+
+Now say you want the a subset of the data that passed all of the validation steps. You can do that with the `get_sundered_data()` method. This will return a DataFrame with only the rows that passed all validation steps.
+
+```{python}
+passing_data = validation_2.get_sundered_data()
+```
+
+Let's preview the passing data.
+
+```{python}
+pb.preview(passing_data)
+```
+
+This DataFrame contains only the rows that met all the validation criteria we set in our plan. You can now use this cleaned dataset for further analysis or reporting.
