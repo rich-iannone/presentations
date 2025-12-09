@@ -38,13 +38,13 @@ pb.missing_vals_tbl(nycflights)
 
 
 
-Alright, let's create a validation plan for the `nycflights` dataset. The plan will include several assertions to check data quality.
+Alright, let's create a validation plan for the `nycflights` dataset. The plan will include several assertions to check data quality. Here's what we want to validate:
 
-- col_vals_not_null for all columns ending with "time"
-- col_vals_not_null for the "carrier" column
-- col_vals_gt for the "distance" column to ensure all values are greater than 0
-- col_vals_in_set for the "origin" column to ensure values are in the set {"JFK", "LGA", "EWR"}
-- rows_distinct to ensure all rows are distinct
+- Null-checking for all columns ending with `time`
+- same for for the `carrier` column
+- all values in the `distance` column should be greater than `0`
+- that the `origin` column has values in the set of ("JFK", "LGA", "EWR")
+- that all rows are distinct/unique
 
 ```{python}
 validation = (
@@ -69,8 +69,9 @@ validation # this will display the validation report
 
 
 
+## Getting data extracts
 
-Any arrival delay above 1000 minute is concerning. Let's collect a DataFrame of the failing records for further inspection.
+An arrival delay above 1000 minutes is concerning. Let's collect a DataFrame of the failing records for further inspection.
 
 Few things to note:
 
@@ -95,6 +96,8 @@ validation.get_step_report(i=7)
 
 
 
+
+## Briefs
 
 Now, let's look at how to use something called briefs in our validation plan. Briefs provide concise summaries of each validation step's outcome. They can be automatically generated or custom-defined. Let's see an example of auto-generated briefs.
 
@@ -124,6 +127,7 @@ This is better for stakeholders who want a quick overview of the validation resu
 
 
 
+## Sundering Data
 
 Now say you want the a subset of the data that passed all of the validation steps. You can do that with the `get_sundered_data()` method. This will return a DataFrame with only the rows that passed all validation steps.
 
