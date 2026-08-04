@@ -1,0 +1,142 @@
+---
+title: "Exploring the films dataset"
+format: html
+---
+
+```{r}
+#| include: false
+library(pointblank)
+library(tidyverse)
+library(beepr)
+```
+
+# First look at the `films` dataset
+
+We are going to load in my films dataset that I assembled from my Letterboxd
+data (I have an account, my profile is https://letterboxd.com/rich_i/)
+
+We will use `readr::read_csv()` for this and I set the `col_types` value using
+what I know about the dataset
+
+```{r}
+films <-
+  readr::read_csv(
+    file = "2026-08-04-DSLab-pointblank-for-R/films.csv",
+    col_types = cols(
+      film_title = col_character(),
+      year = col_integer(),
+      letterboxd_uri = col_character(),
+      film_rating = col_double(),
+      director = col_character()
+    )
+  )
+```
+
+Look at the tibble.
+
+```{r}
+films
+```
+
+We're in Positron, so we can use `View()` to quickly see the dataset in the
+Data Viewer.
+
+```{r}
+View(films)
+```
+
+Just from looking at the stats in the Data Viewer we see issues. We can also use
+summary:
+
+```{r}
+summary(films)
+```
+
+Not as good though! Doesn't show missing values for character columns :(
+
+One thing that pointblank offers is `scan_data()`. It can provide a lot of useful
+information about a dataset (especially in its `Variables` view). Use this
+to get an HTML-based report:
+
+```{r}
+pointblank::scan_data(films, sections = "OVS")
+```
+
+Some of what's in there is not useful, but some of it really is!
+
+# Column descriptions AKA a data dictionary
+
+Columns and what they mean (a data dictionary)
+
+`film_title`
+The name of the film. Punctuation and special characters are fine. This is
+typically the English name of the film (or at least transliterated to English).
+Every film should have a title.
+
+`year`
+The year the film was widely released. Every film has a single year value.
+
+`letterboxd_uri`
+A shortened link to the Letterboxd film page for `film_title`. This is publicly
+accessible (no login required). Every film should have a value for this.
+
+`film_rating`
+This is what I rated the film in Letterboxd through my personal account at
+https://letterboxd.com/rich_i/. Every film should be rated.
+
+`director`
+The name of the director usually as '{first_name} {last_name}' (but not always,
+and it's fine). Sometimes there are multiple directors and each are separated
+with `", "`. There should always be at least one director.
+
+The problem: seems like some looking at the data shows weird values on occasion!
+
+The solution: let's validate!
+
+# Using pointblank
+
+The workflow for data validation in **pointblank** involves three basic components:
+
+- the creation of an 'agent' (this is the main data collection and reporting object)
+- the declaration of validation steps using validation functions (as many as you need)
+- the interrogation of the data (here the agent finally carries out the validation tasks)
+
+The validation sandwich:
+
+```r
+agent <-
+  create_agent(...) |>
+  << validation functions >> |>
+  interrogate()
+```
+
+Validation functions are documented in here:
+
+https://rstudio.github.io/pointblank/reference/index.html#validation-expectation-and-test-functions
+
+Okay let's now try to validate this dataset:
+
+```{r}
+
+```
+
+
+# Splitting a Validated Dataset
+
+After a validation, you might want to split the dataset rows to keep good parts,
+and to look more closely at bad parts (failing test units). We use the function
+called `get_sundered_data()` for this.
+
+```{r}
+
+```
+
+
+# Using `draft_validation()` to get up and running quickly
+
+You can use a function called `draft_validation()`, to get a large piece of
+validation code.
+
+```{r}
+
+```
