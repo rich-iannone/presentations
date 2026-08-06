@@ -1,0 +1,335 @@
+---
+title: "Demo"
+format: html
+---
+
+```{python}
+import pointblank as pb
+import polars as pl
+```
+
+## Validations: simple to more complex
+
+Let's look at the `small_table` dataset (using `pb.preview()`):
+
+```{python}
+pb.preview(pb.load_dataset(dataset="small_table", tbl_type="polars"))
+```
+
+We'll validate several aspects of this small DataFrame. The general sequence is:
+
+- pb.Validate()
+- validation steps (many methods of Validate)
+- the `.interrogate()` method
+
+```{python}
+validation = (
+    pb.Validate( # Use pb.Validate to start
+        data=pb.load_dataset(dataset="small_table", tbl_type="polars"),
+        tbl_name="small_table",
+        label="A starter validation"
+    )
+    .col_vals_gt(columns="d", value=1000)       # STEP 1 |
+    .col_vals_le(columns="c", value=5)          # STEP 2 |
+    .col_exists(columns=["date", "date_time"])  # STEP 3 |
+    .interrogate()
+)
+
+validation
+```
+
+Let's look at a larger dataset: `game_revenue` (included in Pointblank).
+
+```{python}
+pb.preview(pb.load_dataset(dataset="game_revenue", tbl_type="polars"))
+```
+
+Here's a more advanced validation that:
+
+- has more types of validation methods
+- uses thresholds (shows indicators in report when failures exceed thresholds)
+- uses the pre= parameter in a particular step (to manipulate the studied table)
+
+```{python}
+validation = (
+    pb.Validate(
+        data=pb.load_dataset(dataset="game_revenue", tbl_type="polars"),
+        tbl_name="game_revenue",
+        label="Comprehensive validation example",
+        thresholds=pb.Thresholds(warning=0.10, error=0.25, critical=0.35),
+    )
+    .col_vals_regex(columns="player_id", pattern=r"^[A-Z]{12}[0-9]{3}$")
+    .col_vals_gt(columns="session_duration", value=5)
+    .col_vals_ge(columns="item_revenue", value=0.02)
+    .col_vals_in_set(columns="item_type", set=["iap", "ad"])
+    .col_vals_in_set(
+        columns="acquisition",
+        set=["google", "facebook", "organic", "crosspromo", "other_campaign"]
+    )
+    .col_vals_not_in_set(columns="country", set=["Mongolia", "Germany"])
+    .col_vals_between(
+        columns="session_duration",
+        left=10, right=50,
+        pre = lambda df: df.select(pl.median("session_duration"))
+    )
+    .rows_distinct(columns_subset=["player_id", "session_id", "time"])
+    .row_count_match(count=2000)
+    .col_count_match(count=11)
+    .col_vals_not_null(columns=pb.starts_with("item"))
+    .col_exists(columns="start_day")
+    .interrogate()
+)
+
+validation
+```
+
+Now let's look a simpler validation:
+
+- step 1: no failures
+- step 2: 14 test failures, and we'll look at what values failed
+
+```{python}
+validation = (
+    pb.Validate(
+        data=pb.load_dataset(dataset="game_revenue"),
+        tbl_name="game_revenue",
+        label="Validation with test unit failures available as an extract"
+    )
+    .col_vals_gt(columns="item_revenue", value=0)      # STEP 1: no test unit failures
+    .col_vals_ge(columns="session_duration", value=5)  # STEP 2: 14 test unit failures -> extract
+    .interrogate()
+)
+
+validation
+```
+
+For any validation steps with failures, we can get a DataFrame with the failing rows.
+Use the `.get_data_extracts()` method for that. Here I'm putting the DF in `pb.preview()`:
+
+```{python}
+pb.preview(validation.get_data_extracts(i=2, frame=True), n_head=20, n_tail=20)
+```
+
+Also, we can get a drill-down report of a failing step with the `.get_step_report()` method:
+
+```{python}
+validation.get_step_report(i=2)
+```
+
+
+## Schema checking
+
+Sometimes, you need to check the schema of a table. Define the schema with `pb.Schema` and use it in
+`.col_schema_match()`. Given the importance of schema checks, the report table will provide a small
+schema check report in the footer (also, `.get_step_report()` will give you a separate report).
+
+```{python}
+tbl = pl.DataFrame(
+    {
+        "a": ["apple", "banana", "cherry", "date"],
+        "b": [1, 6, 3, 5],
+        "c": [1.1, 2.2, 3.3, 4.4],
+    }
+)
+
+# Use the Schema class to define the column schema as loosely or rigorously as required
+schema = pb.Schema(
+    columns=[
+        ("a", "String"),         # Column 'a' has dtype 'String'
+        ("b", ["Int", "Int64"]), # Column 'b' has dtype 'Int' or 'Int64'
+        ("c", )                  # Column 'c' follows 'b'; we don't specify a dtype
+    ]
+)
+
+# Use the `col_schema_match()` validation method to perform the schema check
+validation = (
+    pb.Validate(data=tbl)
+    .col_schema_match(schema=schema)
+    .interrogate()
+)
+
+validation
+```
+
+
+## Specialized checks using column expressions
+
+A column expression can be used to check column values. Just use `col_vals_expr()` for this and
+you can pass in a lambda expression.
+
+```{python}
+validation = (
+    pb.Validate(
+        data=pb.load_dataset(dataset="small_table", tbl_type="pandas")
+    )
+    .col_vals_expr(expr=lambda df: (df["d"] % 1 != 0) & (df["a"] < 10))  # Pandas column expr
+    .interrogate()
+)
+
+validation
+```
+
+
+## Profiling your data
+
+Let's look at profiling for a second. Use `col_summary_tbl()` with a table.
+
+```{python}
+pb.col_summary_tbl(pb.load_dataset("game_revenue", tbl_type = "polars"))
+```
+
+Works with *all sorts* of data.
+
+```{python}
+pb.col_summary_tbl("yellow_tripdata_2009-01.parquet")
+```
+
+
+## AI-driven validation
+
+The `.prompt()` validation method uses an LLMs to validate rows of data based on natural language
+criteria. It generates binary test results (pass/fail) that integrate with the standard reporting
+framework.
+
+```{python}
+validation = (
+    pb.Validate(data=pb.load_dataset("game_revenue"))
+    .prompt(
+        prompt="Is this a recognized country or territory name?",
+        model="bedrock:us.anthropic.claude-opus-4-6-v1",
+        columns_subset="country",  # Optional (but good to use)
+        batch_size=200,
+    )
+    .interrogate()
+)
+
+validation
+```
+
+Here's an example where I use a small films dataset and we check for incorrect release years.
+
+```{python}
+validation = (
+    pb.Validate(data="films.csv")
+    .prompt(
+        prompt="Is the film's release year correct? Don't include missing values.",
+        model="bedrock:us.anthropic.claude-opus-4-6-v1",
+        columns_subset=["film_title", "director", "year"],
+        batch_size=200,
+    )
+    .interrogate()
+)
+
+validation
+```
+
+Let's look at the 'step report' for this validation (and see the incorrect years):
+
+```{python}
+validation.get_step_report(i = 1, limit = 100)
+```
+
+If you'd like an agent to create a validation plan for you (based on a dataset), use
+`pb.DraftValidation` for this:
+
+```{python}
+pb.DraftValidation(
+    data=pb.load_dataset(dataset="nycflights"),
+    model="bedrock:us.anthropic.claude-opus-4-6-v1",
+)
+```
+
+Scroll down....
+
+
+
+
+
+
+
+
+
+(This is the output from DraftValidation.)
+
+```{python}
+# Define schema based on column names and dtypes
+schema = pb.Schema(
+    columns=[
+        ("year", "Int64"),
+        ("month", "Int64"),
+        ("day", "Int64"),
+        ("dep_time", "Int64"),
+        ("sched_dep_time", "Int64"),
+        ("dep_delay", "Int64"),
+        ("arr_time", "Int64"),
+        ("sched_arr_time", "Int64"),
+        ("arr_delay", "Int64"),
+        ("carrier", "String"),
+        ("flight", "Int64"),
+        ("tailnum", "String"),
+        ("origin", "String"),
+        ("dest", "String"),
+        ("air_time", "Int64"),
+        ("distance", "Int64"),
+        ("hour", "Int64"),
+        ("minute", "Int64"),
+    ]
+)
+
+# The validation plan
+validation = (
+    pb.Validate(
+        data=pb.load_dataset(dataset="nycflights"),
+        label="Draft Validation",
+        thresholds=pb.Thresholds(warning=0.10, error=0.25, critical=0.35),
+    )
+    .col_schema_match(schema=schema)
+    .col_vals_not_null(
+        columns=[
+            "year", "month", "day", "sched_dep_time",
+            "sched_arr_time", "carrier", "flight", "origin",
+            "dest", "distance", "hour", "minute",
+        ]
+    )
+    .col_vals_between(columns="month", left=1, right=12)
+    .col_vals_between(columns="day", left=1, right=31)
+    .col_vals_between(
+        columns="dep_time", left=1, right=2400, na_pass=True
+    )
+    .col_vals_between(
+        columns="sched_dep_time", left=106, right=2359
+    )
+    .col_vals_between(
+        columns="dep_delay", left=-43, right=1301, na_pass=True
+    )
+    .col_vals_between(
+        columns="arr_time", left=1, right=2400, na_pass=True
+    )
+    .col_vals_between(
+        columns="sched_arr_time", left=1, right=2359
+    )
+    .col_vals_between(
+        columns="arr_delay", left=-86, right=1272, na_pass=True
+    )
+    .col_vals_gt(columns="flight", value=0)
+    .col_vals_between(
+        columns="air_time", left=20, right=695, na_pass=True
+    )
+    .col_vals_gt(columns="distance", value=0)
+    .col_vals_between(columns="hour", left=1, right=23)
+    .col_vals_between(columns="minute", left=0, right=59)
+    .col_vals_in_set(
+        columns="origin", set=["EWR", "LGA", "JFK"]
+    )
+    .row_count_match(count=336776)
+    .col_count_match(count=18)
+    .rows_distinct()
+    .interrogate()
+)
+
+validation
+```
+
+## In closing
+
+There are many more types of validations possible. This is a big library!
