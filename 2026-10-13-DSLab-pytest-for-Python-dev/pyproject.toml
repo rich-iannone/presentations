@@ -1,0 +1,43 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "tinytab"
+version = "0.1.0"
+description = "A tiny library for formatting values and rendering small tables."
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+    { name = "Richard Iannone", email = "rich@posit.co" },
+]
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "syrupy>=4.6",
+]
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+addopts = [
+    "-ra",               # summary of all non-passing outcomes at the end
+    "--strict-markers",  # typo'd marker names become errors
+    "--strict-config",   # typo'd config keys become errors
+    "-m", "not slow",    # skip slow tests by default (run them with `-m slow`)
+]
+markers = [
+    "slow: marks tests as slow (deselected by default; run with '-m slow')",
+]
+xfail_strict = true              # an xfail test that unexpectedly passes is a failure
+filterwarnings = ["error"]       # unexpected warnings fail the test
+
+[tool.coverage.run]
+source = ["tinytab"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
