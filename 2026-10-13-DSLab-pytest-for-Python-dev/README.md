@@ -1,11 +1,6 @@
-# tinytab
+# DSLab: pytest for Python
 
-A tiny library for formatting values and rendering small tables. It exists to
-demonstrate testing a Python library with pytest.
+For this DSLab, we'll go through tests in the example Python library found at:
 
-```python
-from tinytab import Table, fmt_currency
+https://github.com/rich-iannone/example-python-package
 
-tbl = Table({"item": ["coffee", "bagel"], "price": [3.5, 2.25]})
-print(tbl.fmt("price", fmt_currency).as_text())
-```
